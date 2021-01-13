@@ -42,4 +42,7 @@
     <string name="error_for_module">Error: %1$i for module %2$s</string>
     <string name="asset_content">Asset content</string>
     <string name="title_initialinstall">Initial Installation</string>
+
+    <string name="facebook_app_id">450895216070015</string>
+    <string name="fb_login_protocol_scheme">fb450895216070015</string>
 </resources>

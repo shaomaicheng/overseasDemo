@@ -15,6 +15,8 @@
  */
 
 package com.chenglei.android.samples.dynamicfeatures
+import com.facebook.appevents.AppEventsLogger;
+
 
 import android.app.Activity
 import android.content.Intent
@@ -22,11 +24,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.Group
+import com.facebook.*
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
+import com.facebook.login.widget.LoginButton
 import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
@@ -38,6 +45,8 @@ import java.util.Locale
 
 class MainActivity : BaseSplitActivity() {
     /** Listener used to handle changes in state for install requests. */
+    private var callbackManager : CallbackManager? = null
+
     private val listener = SplitInstallStateUpdatedListener { state ->
         val multiInstall = state.moduleNames().size > 1
         val langsInstall = state.languages().isNotEmpty()
@@ -84,6 +93,7 @@ class MainActivity : BaseSplitActivity() {
     request that can be made from SplitInstallSessionStatus.REQUIRES_USER_CONFIRMATION
     in the listener above. */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        callbackManager?.onActivityResult(requestCode, resultCode, data)
         if (requestCode == CONFIRMATION_REQUEST_CODE) {
             // Handle the user's decision. For example, if the user selects "Cancel",
             // you may want to disable certain functionality that depends on the module.
@@ -157,6 +167,8 @@ class MainActivity : BaseSplitActivity() {
         setContentView(R.layout.activity_main)
         manager = SplitInstallManagerFactory.create(this)
         initializeViews()
+
+        fblogin()
     }
 
     override fun onResume() {
@@ -371,6 +383,40 @@ class MainActivity : BaseSplitActivity() {
     private fun displayButtons() {
         progress.visibility = View.GONE
         buttons.visibility = View.VISIBLE
+    }
+
+    private fun fblogin() {
+        /**
+         * facebook 登录回调
+         */
+        callbackManager = CallbackManager.Factory.create();
+        val accessToken = AccessToken.getCurrentAccessToken()
+        val isLogin = accessToken != null && !accessToken.isExpired
+        Log.e("fblogin", "islogin: $isLogin")
+        val loginButton = findViewById<LoginButton>(R.id.login_button)
+        loginButton.setReadPermissions("email")
+
+        val loginButtonNative = findViewById<Button>(R.id.login_button_native)
+        loginButtonNative.setOnClickListener {
+            LoginManager.getInstance().logIn(this, listOf("email") )
+        }
+
+        val loginCallback = object : FacebookCallback<LoginResult>{
+            override fun onSuccess(result: LoginResult?) {
+                Log.e("fblogin", result?.accessToken?.token ?:"no token")
+            }
+
+            override fun onCancel() {
+                Log.e("fblogin", "登录取消")
+            }
+
+            override fun onError(error: FacebookException?) {
+                Log.e("fblogin", "登录出错,${error?.message}")
+            }
+
+        }
+        LoginManager.getInstance().registerCallback(callbackManager,loginCallback)
+//        loginButton.registerCallback(callbackManager,loginCallback)
     }
 }
 
